@@ -13,10 +13,25 @@
 
 ## 部署
 
-### 方式一：Docker Compose（推荐）
+### 方式零：Cloudflare Workers + D1（免服务器，推荐）
+
+数据存在 Cloudflare D1 数据库，全球 HTTPS 节点接入，免费额度内个人使用完全够用：
 
 ```bash
-git clone https://github.com/YOUR_NAME/snippet-hub.git
+# 需要先 npm i -g wrangler 并 wrangler login
+wrangler d1 create snippet-hub            # 把输出的 database_id 填进 wrangler.toml
+wrangler d1 execute snippet-hub --remote --file schema.sql
+wrangler secret put AUTH_PASS             # 输入你的登录密码（用户名在 wrangler.toml 的 AUTH_USER）
+wrangler deploy
+```
+
+部署完成即得到 `https://snippet-hub.<你的子域>.workers.dev`，自带 HTTPS。改密码：`wrangler secret put AUTH_PASS` 后重新 deploy。
+本仓库的 wrangler.toml 已包含可用的 database_id（作者自己的实例），Fork 后建议创建自己的 D1 并替换。
+
+### 方式一：Docker Compose（自有服务器）
+
+```bash
+git clone https://github.com/lovexw/snippet-hub.git
 cd snippet-hub
 
 # 设置登录账号密码
@@ -49,6 +64,15 @@ AUTH_USER=admin AUTH_PASS=你的强密码 node server.js
 
 ## 生产环境建议
 
+### Cloudflare 版
+
+- 免费、自带 HTTPS 和全球节点，无需反代；个人使用在 D1 免费额度（5 GB 存储、每天 500 万行读）内绰绰有余
+- 想用自定义域名：在 Cloudflare 控制台该 Worker 的 Settings → Domains & Routes 里绑定即可
+- 登录限速、会话都存在 D1，多设备访问状态一致
+- 备份：`wrangler d1 execute snippet-hub --remote --command "SELECT value FROM kv WHERE key='items'" --json > backup.json`，或直接用页面左下角「导出备份」
+
+### 自有服务器版
+
 1. **上 HTTPS**：用 Nginx / Caddy 反向代理并签发证书，例如 Caddy 一行即可：
 
    ```
@@ -71,7 +95,12 @@ AUTH_USER=admin AUTH_PASS=你的强密码 node server.js
 
 ## 技术栈
 
-单文件 Node.js 服务端（`server.js`，零依赖）+ 单文件前端（`public/index.html`，无框架无构建），总共不到 2000 行，读得懂、改得动。
+两种部署形态，同一套前端：
+
+- **Cloudflare Workers**：`src/worker.js` + D1 数据库（`schema.sql`：kv / sessions / login_attempts 三张表），静态页面由 Workers Static Assets 托管
+- **自有服务器**：单文件 Node.js 服务端（`server.js`，零依赖）+ JSON 文件存储
+
+前端为单文件 `public/index.html`，无框架无构建，读得懂、改得动。
 
 ## License
 
