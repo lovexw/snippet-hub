@@ -1,0 +1,13 @@
+services:
+  snippet-hub:
+    build: .
+    container_name: snippet-hub
+    ports:
+      - "8321:8321"
+    volumes:
+      - ./data:/app/data
+    environment:
+      # 推荐用环境变量指定账号密码；不填则首次启动自动生成并打印在日志里
+      - AUTH_USER=${AUTH_USER:-admin}
+      - AUTH_PASS=${AUTH_PASS:-}
+    restart: unless-stopped

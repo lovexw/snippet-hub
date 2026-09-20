@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snippet Hub · 私有速存</title>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --border: #e7e9f0;
+    --text: #1d2129;
+    --text-2: #5c6370;
+    --text-3: #9aa1ad;
+    --accent: #4f6bf0;
+    --accent-soft: #eef1fe;
+    --amber: #f59e0b;
+    --amber-soft: #fef6e7;
+    --green: #10b981;
+    --red: #ef4444;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(29,33,41,.04), 0 4px 16px rgba(29,33,41,.06);
+    --shadow-hover: 0 2px 4px rgba(29,33,41,.06), 0 12px 32px rgba(29,33,41,.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent-soft); }
+
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 232px; flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 20px 14px;
+    overflow-y: auto;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; padding: 4px 10px 20px; }
+  .logo-mark {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #4f6bf0, #7c5cf0);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px; font-weight: 700;
+  }
+  .logo h1 { font-size: 16px; font-weight: 700; letter-spacing: .2px; }
+  .logo span { display: block; font-size: 11px; color: var(--text-3); font-weight: 400; }
+
+  .nav-group-label {
+    font-size: 11px; font-weight: 600; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: .8px;
+    padding: 14px 10px 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border-radius: 9px;
+    cursor: pointer; color: var(--text-2);
+    transition: background .15s, color .15s;
+    user-select: none; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: #f2f4f8; color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .nav-item .icon { width: 18px; text-align: center; font-size: 14px; }
+  .nav-item .count {
+    margin-left: auto; font-size: 11px; color: var(--text-3);
+    background: #f0f2f6; border-radius: 10px; padding: 1px 8px; min-width: 22px; text-align: center;
+  }
+  .nav-item.active .count { background: rgba(79,107,240,.14); color: var(--accent); }
+  .tag-cloud { padding: 4px 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-chip {
+    font-size: 12px; color: var(--text-2); background: #f0f2f6;
+    padding: 3px 10px; border-radius: 20px; cursor: pointer;
+    transition: all .15s; user-select: none;
+  }
+  .tag-chip:hover { background: #e5e8f0; }
+  .tag-chip.active { background: var(--accent); color: #fff; }
+  .sidebar-footer { margin-top: auto; padding-top: 16px; display: flex; gap: 8px; align-items: center; }
+  .sidebar-footer button {
+    flex: 1; font-size: 12px; padding: 7px 0;
+    background: #f0f2f6; border: none; border-radius: 8px;
+    color: var(--text-2); cursor: pointer; transition: all .15s;
+  }
+  .sidebar-footer button:hover { background: #e5e8f0; color: var(--text); }
+  .sidebar-user {
+    font-size: 12px; color: var(--text-3); padding: 0 6px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ---------- Main ---------- */
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 28px; flex-shrink: 0;
+  }
+  .search-box {
+    flex: 1; max-width: 440px; position: relative;
+  }
+  .search-box .icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 14px; }
+  .search-box input {
+    width: 100%; padding: 10px 74px 10px 36px;
+    border: 1.5px solid var(--border); border-radius: 11px;
+    background: var(--surface); font-size: 14px; color: var(--text);
+    outline: none; transition: border .15s, box-shadow .15s;
+  }
+  .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,107,240,.12); }
+  .search-box kbd {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; color: var(--text-3); background: #f0f2f6;
+    border-radius: 5px; padding: 2px 7px; font-family: inherit;
+  }
+  .btn-primary {
+    display: flex; align-items: center; gap: 7px; justify-content: center;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 11px; padding: 10px 18px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all .15s; box-shadow: 0 2px 8px rgba(79,107,240,.28);
+    font-family: inherit;
+  }
+  .btn-primary:hover { background: #3d59e0; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(79,107,240,.36); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: .6; cursor: wait; transform: none; }
+
+  .content { flex: 1; overflow-y: auto; padding: 4px 28px 40px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+  .empty {
+    text-align: center; padding: 90px 0; color: var(--text-3);
+  }
+  .empty .big { font-size: 44px; margin-bottom: 14px; }
+  .empty p { font-size: 14px; margin-bottom: 18px; }
+
+  /* ---------- Card ---------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 16px 16px 12px; display: flex; flex-direction: column;
+    transition: box-shadow .2s, transform .2s, border-color .2s;
+    animation: pop .25s ease both;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); border-color: #d8dce8; }
+  .card-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+  .card-title { font-size: 15px; font-weight: 600; flex: 1; word-break: break-all; line-height: 1.35; }
+  .star {
+    background: none; border: none; cursor: pointer; font-size: 16px;
+    color: #d4d8e0; padding: 2px; line-height: 1; transition: transform .15s, color .15s;
+  }
+  .star:hover { transform: scale(1.25); }
+  .star.on { color: var(--amber); }
+  .type-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; border-radius: 6px;
+    padding: 2px 8px; margin-bottom: 8px; width: fit-content;
+  }
+  .badge-account { background: #e8f5ee; color: #0d9268; }
+  .badge-command { background: #eef1fe; color: #4f6bf0; }
+  .badge-prompt  { background: #fdf0e8; color: #e0782c; }
+  .badge-note    { background: #f3eefe; color: #8b5cf0; }
+
+  .card-body {
+    font-size: 13px; color: var(--text-2); line-height: 1.6;
+    background: #f8f9fb; border-radius: 9px; padding: 10px 12px;
+    max-height: 128px; overflow: hidden; position: relative;
+    white-space: pre-wrap; word-break: break-all; flex: 1;
+  }
+  .card-body.fade::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 40px;
+    background: linear-gradient(transparent, #f8f9fb);
+  }
+  .card-body.mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+  .field-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+  .field-row .k { color: var(--text-3); flex-shrink: 0; }
+  .field-row .v { word-break: break-all; text-align: right; }
+  .reveal-btn {
+    background: none; border: none; color: var(--accent); cursor: pointer;
+    font-size: 12px; padding: 0; font-family: inherit;
+  }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 5px; padding: 10px 0 8px; }
+  .mini-tag {
+    font-size: 11px; color: var(--text-3); background: #f0f2f6;
+    padding: 2px 8px; border-radius: 12px; cursor: pointer;
+  }
+  .mini-tag:hover { color: var(--accent); background: var(--accent-soft); }
+
+  .card-foot {
+    display: flex; align-items: center; gap: 6px;
+    border-top: 1px solid #f0f2f6; padding-top: 10px;
+  }
+  .card-time { font-size: 11px; color: var(--text-3); margin-right: auto; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-3); font-size: 14px; padding: 5px 7px;
+    border-radius: 7px; transition: all .15s; line-height: 1;
+  }
+  .icon-btn:hover { background: #f0f2f6; color: var(--text); }
+  .icon-btn.copy:hover { color: var(--accent); background: var(--accent-soft); }
+  .icon-btn.del:hover { color: var(--red); background: #feecec; }
+
+  /* ---------- Modal ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(29,33,41,.36);
+    backdrop-filter: blur(3px); z-index: 50;
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 8vh 20px 20px;
+  }
+  .overlay.show { display: flex; animation: fade .18s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: var(--surface); border-radius: 18px;
+    width: 560px; max-width: 100%; max-height: 82vh; overflow-y: auto;
+    padding: 26px 28px 24px; box-shadow: 0 24px 64px rgba(29,33,41,.24);
+    animation: slideup .22s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes slideup { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
+  .modal h2 { font-size: 17px; margin-bottom: 20px; }
+  .form-row { margin-bottom: 15px; }
+  .form-row label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+  .form-row input[type=text], .form-row input[type=password], .form-row textarea, .form-row select {
+    width: 100%; padding: 9px 12px; font-size: 13.5px; font-family: inherit;
+    border: 1.5px solid var(--border); border-radius: 9px;
+    background: #fbfcfe; color: var(--text); outline: none;
+    transition: border .15s, box-shadow .15s;
+  }
+  .form-row textarea { resize: vertical; min-height: 96px; line-height: 1.6; }
+  .form-row textarea.mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,107,240,.12); background: #fff;
+  }
+  .type-picker { display: flex; gap: 8px; }
+  .type-opt {
+    flex: 1; text-align: center; padding: 9px 0; border-radius: 10px;
+    border: 1.5px solid var(--border); cursor: pointer; font-size: 13px;
+    color: var(--text-2); transition: all .15s; user-select: none;
+  }
+  .type-opt:hover { border-color: #cdd3e0; }
+  .type-opt.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .form-hint { font-size: 11.5px; color: var(--text-3); margin-top: 5px; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+  .btn-ghost {
+    padding: 9px 18px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: none; font-size: 13.5px; color: var(--text-2); cursor: pointer; transition: all .15s;
+    font-family: inherit;
+  }
+  .btn-ghost:hover { background: #f0f2f6; }
+  .btn-danger-link { background: none; border: none; color: var(--red); font-size: 13px; cursor: pointer; margin-right: auto; padding: 9px 0; }
+  .btn-danger-link:hover { text-decoration: underline; }
+
+  /* ---------- Login ---------- */
+  #loginOverlay { z-index: 80; align-items: center; padding: 20px; }
+  .login-card {
+    background: var(--surface); border-radius: 20px;
+    width: 380px; max-width: 100%;
+    padding: 40px 36px 32px; text-align: center;
+    box-shadow: 0 24px 64px rgba(29,33,41,.24);
+    animation: slideup .25s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .login-card .logo-mark { width: 52px; height: 52px; font-size: 24px; border-radius: 15px; margin: 0 auto 16px; }
+  .login-card h2 { font-size: 20px; margin-bottom: 4px; }
+  .login-sub { font-size: 12.5px; color: var(--text-3); margin-bottom: 26px; }
+  .login-card .form-row { text-align: left; }
+  .login-card .btn-primary { width: 100%; margin-top: 4px; padding: 11px 0; }
+  .login-err {
+    display: none; font-size: 12.5px; color: var(--red);
+    background: #feecec; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+  }
+  .login-err.show { display: block; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #23262e; color: #fff; font-size: 13.5px;
+    padding: 11px 22px; border-radius: 12px; z-index: 99;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    transition: transform .28s cubic-bezier(.2,.9,.3,1.2), opacity .28s;
+    opacity: 0; pointer-events: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (max-width: 720px) {
+    .sidebar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 登录视图 -->
+<div class="overlay show" id="loginOverlay">
+  <div class="login-card">
+    <div class="logo-mark">◈</div>
+    <h2>Snippet Hub</h2>
+    <p class="login-sub">私有部署 · 登录后访问你的速存</p>
+    <div class="login-err" id="loginErr"></div>
+    <div class="form-row">
+      <label>用户名</label>
+      <input type="text" id="loginUser" autocomplete="username">
+    </div>
+    <div class="form-row">
+      <label>密码</label>
+      <input type="password" id="loginPass" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">登 录</button>
+  </div>
+</div>
+
+<div class="app" id="app" style="visibility:hidden">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">◈</div>
+      <h1>Snippet Hub<span>私有部署 · 数据在自己服务器</span></h1>
+    </div>
+
+    <div class="nav-group-label">视图</div>
+    <div class="nav-item" data-view="all"><span class="icon">🗂</span>全部条目<span class="count" id="c-all">0</span></div>
+    <div class="nav-item" data-view="fav"><span class="icon">⭐</span>常用收藏<span class="count" id="c-fav">0</span></div>
+
+    <div class="nav-group-label">分类</div>
+    <div class="nav-item" data-view="account"><span class="icon">👤</span>账号凭证<span class="count" id="c-account">0</span></div>
+    <div class="nav-item" data-view="command"><span class="icon">⌨️</span>命令 / API<span class="count" id="c-command">0</span></div>
+    <div class="nav-item" data-view="prompt"><span class="icon">✨</span>提示词<span class="count" id="c-prompt">0</span></div>
+    <div class="nav-item" data-view="note"><span class="icon">📝</span>速记文本<span class="count" id="c-note">0</span></div>
+
+    <div class="nav-group-label">标签</div>
+    <div class="tag-cloud" id="tagCloud"></div>
+
+    <div class="sidebar-footer">
+      <button onclick="exportData()">导出备份</button>
+      <button onclick="document.getElementById('importFile').click()">导入</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <div class="sidebar-footer" style="padding-top:8px">
+      <span class="sidebar-user" id="userLabel"></span>
+      <button onclick="doLogout()" style="flex:0 0 auto;padding:7px 14px">退出</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input id="searchInput" type="text" placeholder="搜索标题、内容、标签…">
+        <kbd>⌘K</kbd>
+      </div>
+      <button class="btn-primary" onclick="openEditor()">＋ 新建</button>
+    </div>
+    <div class="content">
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" style="display:none">
+        <div class="big">📭</div>
+        <p id="emptyText">这里还什么都没有，点击右上角「新建」添加第一条吧</p>
+        <button class="btn-primary" onclick="openEditor()">＋ 添加条目</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 编辑弹窗 -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">新建条目</h2>
+    <div class="form-row">
+      <label>类型</label>
+      <div class="type-picker" id="typePicker">
+        <div class="type-opt" data-type="account">👤 账号凭证</div>
+        <div class="type-opt sel" data-type="command">⌨️ 命令</div>
+        <div class="type-opt" data-type="prompt">✨ 提示词</div>
+        <div class="type-opt" data-type="note">📝 速记</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>标题 *</label>
+      <input type="text" id="fTitle" placeholder="例如：TokenRouter API / 临时邮箱-xxx">
+    </div>
+    <div id="accountFields" style="display:none">
+      <div class="form-row"><label>邮箱 / 用户名</label><input type="text" id="fEmail" placeholder="temp-abc@mailinator.com"></div>
+      <div class="form-row"><label>密码</label><input type="password" id="fPassword" placeholder="••••••••" autocomplete="off"></div>
+      <div class="form-row"><label>备注</label><input type="text" id="fNotes" placeholder="注册了什么服务、手机号等"></div>
+    </div>
+    <div id="contentField">
+      <div class="form-row">
+        <label id="contentLabel">内容 *</label>
+        <textarea id="fContent" class="mono" placeholder="粘贴命令、提示词或任意文本…"></textarea>
+        <div class="form-hint" id="contentHint"></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>标签 <span style="font-weight:400;color:var(--text-3)">（用逗号分隔）</span></label>
+      <input type="text" id="fTags" placeholder="api, 常用, work">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger-link" id="deleteBtn" style="display:none" onclick="deleteCurrent()">删除此条目</button>
+      <button class="btn-ghost" onclick="closeEditor()">取消</button>
+      <button class="btn-primary" style="padding:9px 22px" onclick="saveItem()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TYPES = {
+  account: { name: '账号凭证', icon: '👤', cls: 'badge-account' },
+  command: { name: '命令 / API', icon: '⌨️', cls: 'badge-command' },
+  prompt:  { name: '提示词', icon: '✨', cls: 'badge-prompt' },
+  note:    { name: '速记文本', icon: '📝', cls: 'badge-note' },
+};
+
+let items = [];
+let filter = { view: 'all', tag: null, q: '' };
+let editingId = null;
+let revealSet = new Set();
+
+/* ---------- 服务端同步 ---------- */
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    ...opts,
+  });
+  if (res.status === 401) { showLogin(); throw new Error('unauthorized'); }
+  return res;
+}
+
+async function loadItems() {
+  const res = await api('/api/items');
+  items = await res.json();
+  render();
+}
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      const res = await api('/api/items', { method: 'PUT', body: JSON.stringify(items) });
+      if (!res.ok) toast('⚠️ 保存失败，请重试');
+    } catch (e) { /* 401 已处理 */ }
+  }, 250);
+}
+
+/* ---------- 登录 ---------- */
+function showLogin() {
+  document.getElementById('loginOverlay').classList.add('show');
+  document.getElementById('app').style.visibility = 'hidden';
+  setTimeout(() => document.getElementById('loginPass').focus(), 80);
+}
+function hideLogin() {
+  document.getElementById('loginOverlay').classList.remove('show');
+  document.getElementById('app').style.visibility = 'visible';
+}
+async function doLogin() {
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.classList.remove('show');
+  btn.disabled = true; btn.textContent = '登录中…';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        user: document.getElementById('loginUser').value.trim(),
+        pass: document.getElementById('loginPass').value,
+      }),
+    });
+    if (res.ok) {
+      hideLogin();
+      await loadItems();
+      const me = await (await api('/api/me')).json();
+      document.getElementById('userLabel').textContent = '👤 ' + me.user;
+      toast('欢迎回来，' + me.user);
+    } else {
+      const d = await res.json().catch(() => ({}));
+      err.textContent = d.error || '登录失败';
+      err.classList.add('show');
+    }
+  } catch { err.textContent = '网络错误，请重试'; err.classList.add('show'); }
+  btn.disabled = false; btn.textContent = '登 录';
+  document.getElementById('loginPass').value = '';
+}
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+  items = [];
+  showLogin();
+}
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+function timeAgo(ts) {
+  const d = Date.now() - ts;
+  if (d < 60000) return '刚刚';
+  if (d < 3600000) return Math.floor(d/60000) + ' 分钟前';
+  if (d < 86400000) return Math.floor(d/3600000) + ' 小时前';
+  if (d < 7 * 86400000) return Math.floor(d/86400000) + ' 天前';
+  return new Date(ts).toLocaleDateString('zh-CN');
+}
+
+function filtered() {
+  let list = items.slice();
+  if (filter.view === 'fav') list = list.filter(i => i.fav);
+  else if (filter.view !== 'all') list = list.filter(i => i.type === filter.view);
+  if (filter.tag) list = list.filter(i => (i.tags || []).includes(filter.tag));
+  if (filter.q) {
+    const q = filter.q.toLowerCase();
+    list = list.filter(i =>
+      i.title.toLowerCase().includes(q) ||
+      (i.content || '').toLowerCase().includes(q) ||
+      (i.email || '').toLowerCase().includes(q) ||
+      (i.notes || '').toLowerCase().includes(q) ||
+      (i.tags || []).some(t => t.toLowerCase().includes(q)));
+  }
+  list.sort((a, b) => (b.fav - a.fav) || (b.updatedAt - a.updatedAt));
+  return list;
+}
+
+function render() {
+  document.getElementById('c-all').textContent = items.length;
+  document.getElementById('c-fav').textContent = items.filter(i => i.fav).length;
+  for (const t of Object.keys(TYPES))
+    document.getElementById('c-' + t).textContent = items.filter(i => i.type === t).length;
+
+  const tagCount = {};
+  items.forEach(i => (i.tags || []).forEach(t => tagCount[t] = (tagCount[t] || 0) + 1));
+  const cloud = document.getElementById('tagCloud');
+  cloud.innerHTML = Object.keys(tagCount).sort().map(t =>
+    `<span class="tag-chip ${filter.tag === t ? 'active' : ''}" onclick="toggleTag('${esc(t)}')">${esc(t)}</span>`).join('');
+
+  document.querySelectorAll('.nav-item').forEach(n =>
+    n.classList.toggle('active', n.dataset.view === filter.view && !filter.tag));
+
+  const list = filtered();
+  const grid = document.getElementById('grid');
+  document.getElementById('empty').style.display = list.length ? 'none' : 'block';
+  if (!list.length && filter.q) document.getElementById('emptyText').textContent = `没有匹配「${filter.q}」的条目`;
+  else if (!list.length) document.getElementById('emptyText').textContent = '这里还什么都没有，点击「新建」添加第一条吧';
+
+  grid.innerHTML = list.map(i => {
+    const t = TYPES[i.type] || TYPES.note;
+    const body = cardBody(i);
+    const tags = (i.tags || []).map(tag =>
+      `<span class="mini-tag" onclick="toggleTag('${esc(tag)}')">#${esc(tag)}</span>`).join('');
+    return `<div class="card">
+      <div class="card-head">
+        <div style="flex:1;min-width:0">
+          <span class="type-badge ${t.cls}">${t.icon} ${t.name}</span>
+          <div class="card-title">${esc(i.title)}</div>
+        </div>
+        <button class="star ${i.fav ? 'on' : ''}" onclick="toggleFav('${i.id}')" title="常用收藏">${i.fav ? '⭐' : '☆'}</button>
+      </div>
+      ${body}
+      ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+      <div class="card-foot">
+        <span class="card-time">${timeAgo(i.updatedAt)}</span>
+        <button class="icon-btn" onclick="editItem('${i.id}')" title="编辑">✏️</button>
+        <button class="icon-btn del" onclick="deleteItem('${i.id}')" title="删除">🗑</button>
+        <button class="icon-btn copy" onclick="copyItem('${i.id}')" title="复制">⧉ 复制</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cardBody(i) {
+  if (i.type === 'account') {
+    const show = revealSet.has(i.id);
+    const mask = '•'.repeat(Math.min((i.password || '').length || 8, 12));
+    return `<div class="card-body" style="max-height:none">
+      <div class="field-row"><span class="k">邮箱</span><span class="v mono">${esc(i.email || '—')}</span></div>
+      <div class="field-row"><span class="k">密码</span><span class="v mono">${show ? esc(i.password) : mask}
+        <button class="reveal-btn" onclick="toggleReveal('${i.id}')">${show ? '隐藏' : '显示'}</button></span></div>
+      ${i.notes ? `<div class="field-row"><span class="k">备注</span><span class="v">${esc(i.notes)}</span></div>` : ''}
+    </div>`;
+  }
+  const mono = i.type === 'command';
+  const text = i.content || '';
+  const fade = text.split('\n').length > 5 || text.length > 200;
+  return `<div class="card-body ${mono ? 'mono' : ''} ${fade ? 'fade' : ''}">${esc(text)}</div>`;
+}
+
+function copyText(s) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(s);
+  const ta = document.createElement('textarea');
+  ta.value = s; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  document.execCommand('copy'); ta.remove();
+  return Promise.resolve();
+}
+
+function itemPlainText(i) {
+  if (i.type === 'account') {
+    return `邮箱: ${i.email || ''}\n密码: ${i.password || ''}${i.notes ? '\n备注: ' + i.notes : ''}`;
+  }
+  return i.content || '';
+}
+
+function copyItem(id) {
+  const i = items.find(x => x.id === id); if (!i) return;
+  copyText(itemPlainText(i)).then(() => toast('⧉ 已复制到剪贴板'));
+}
+function toggleFav(id) {
+  const i = items.find(x => x.id === id); if (!i) return;
+  i.fav = !i.fav; i.updatedAt = Date.now(); save(); render();
+}
+function toggleReveal(id) { revealSet.has(id) ? revealSet.delete(id) : revealSet.add(id); render(); }
+function toggleTag(t) {
+  filter.tag = filter.tag === t ? null : t;
+  filter.view = 'all'; render();
+}
+function deleteItem(id) {
+  const i = items.find(x => x.id === id); if (!i) return;
+  if (!confirm(`确定删除「${i.title}」吗？`)) return;
+  items = items.filter(x => x.id !== id); save(); render(); toast('已删除');
+}
+
+/* ---------- editor ---------- */
+let editorType = 'command';
+
+function openEditor(id) {
+  editingId = id || null;
+  const i = id ? items.find(x => x.id === id) : null;
+  document.getElementById('modalTitle').textContent = i ? '编辑条目' : '新建条目';
+  editorType = i ? i.type : 'command';
+  document.getElementById('fTitle').value = i ? i.title : '';
+  document.getElementById('fEmail').value = i ? (i.email || '') : '';
+  document.getElementById('fPassword').value = i ? (i.password || '') : '';
+  document.getElementById('fNotes').value = i ? (i.notes || '') : '';
+  document.getElementById('fContent').value = i ? (i.content || '') : '';
+  document.getElementById('fTags').value = i ? (i.tags || []).join(', ') : '';
+  document.getElementById('deleteBtn').style.display = i ? 'block' : 'none';
+  syncTypeUI();
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(() => document.getElementById('fTitle').focus(), 60);
+}
+function closeEditor() { document.getElementById('overlay').classList.remove('show'); }
+
+function syncTypeUI() {
+  document.querySelectorAll('.type-opt').forEach(o => o.classList.toggle('sel', o.dataset.type === editorType));
+  const isAccount = editorType === 'account';
+  document.getElementById('accountFields').style.display = isAccount ? 'block' : 'none';
+  document.getElementById('contentField').style.display = isAccount ? 'none' : 'block';
+  const ta = document.getElementById('fContent');
+  ta.classList.toggle('mono', editorType === 'command');
+  document.getElementById('contentLabel').textContent =
+    editorType === 'prompt' ? '提示词内容 *' : editorType === 'command' ? '命令 / 代码 *' : '内容 *';
+  const hints = {
+    command: '完整粘贴 curl / shell / SQL 等，复制时会原样拷出',
+    prompt:  '把提示词原文贴进来，方便随时复制到任意 AI 工具',
+    note:    '任何想随手存一段的文本',
+  };
+  document.getElementById('contentHint').textContent = isAccount ? '' : hints[editorType];
+}
+
+function saveItem() {
+  const title = document.getElementById('fTitle').value.trim();
+  if (!title) { toast('请填写标题'); document.getElementById('fTitle').focus(); return; }
+  const tags = document.getElementById('fTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  const base = { title, tags, updatedAt: Date.now() };
+  if (editingId) {
+    const i = items.find(x => x.id === editingId);
+    Object.assign(i, base, { type: editorType });
+  } else {
+    Object.assign(base, { id: uid(), type: editorType, fav: false, createdAt: Date.now() });
+    items.unshift(base);
+  }
+  const i = editingId ? items.find(x => x.id === editingId) : base;
+  if (editorType === 'account') {
+    i.email = document.getElementById('fEmail').value.trim();
+    i.password = document.getElementById('fPassword').value;
+    i.notes = document.getElementById('fNotes').value.trim();
+    i.content = '';
+  } else {
+    i.content = document.getElementById('fContent').value;
+    i.email = i.password = i.notes = '';
+  }
+  save(); closeEditor(); render();
+  toast(editingId ? '已保存' : '已添加');
+}
+function deleteCurrent() {
+  if (editingId) { closeEditor(); deleteItem(editingId); }
+}
+
+/* ---------- backup ---------- */
+function exportData() {
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `snippet-hub-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('已导出 JSON 备份');
+}
+async function importData(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) throw 0;
+      const ids = new Set(items.map(i => i.id));
+      let added = 0;
+      data.forEach(d => {
+        if (d && d.id && !ids.has(d.id)) { items.push(d); added++; }
+      });
+      save(); render();
+      toast(`已导入 ${added} 条（重复跳过）`);
+    } catch { toast('导入失败：文件格式不对'); }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+/* ---------- misc ---------- */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+document.querySelectorAll('.nav-item').forEach(n =>
+  n.addEventListener('click', () => { filter.view = n.dataset.view; filter.tag = null; render(); }));
+document.querySelectorAll('.type-opt').forEach(o =>
+  o.addEventListener('click', () => { editorType = o.dataset.type; syncTypeUI(); }));
+document.getElementById('searchInput').addEventListener('input', e => { filter.q = e.target.value.trim(); render(); });
+document.getElementById('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') closeEditor(); });
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('searchInput').focus(); }
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    e.preventDefault(); document.getElementById('searchInput').focus();
+  }
+  if (e.key === 'Escape') closeEditor();
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n' && !document.getElementById('overlay').classList.contains('show')) {
+    e.preventDefault(); openEditor();
+  }
+});
+
+/* ---------- 启动 ---------- */
+(async function init() {
+  try {
+    const me = await (await api('/api/me')).json();
+    if (!me.authed) return showLogin();
+    document.getElementById('userLabel').textContent = '👤 ' + me.user;
+    hideLogin();
+    await loadItems();
+  } catch { /* showLogin 已由 api() 触发 */ }
+})();
+</script>
+</body>
+</html>

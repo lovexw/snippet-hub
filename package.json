@@ -1,0 +1,13 @@
+{
+  "name": "snippet-hub",
+  "version": "1.0.0",
+  "description": "私有部署的个人速存工具：账号密码、API 命令、提示词、速记，搜索即达、一键复制",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
